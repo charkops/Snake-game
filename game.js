@@ -12,6 +12,7 @@
 // GLOBAL vars
 var screenWidth = window.screen.width - 30;
 var screenHeight = window.screen.height - 30;
+var gameStatus = true;
 
 
 var UIcontroller = (function(){
@@ -91,26 +92,33 @@ var UIcontroller = (function(){
             }
         },
         
-        moveRectangle: function(elementID, dir, step){
+        moveRectangle: function(elementID, dir, step, x, y){
             var el, 
                 oldValue;
             
-            if (dir === 'right'){
+            // If Head
+            if(elementID === 'rect-0'){
+                if (dir === 'right'){
+                    el = document.getElementById(elementID);
+                    oldValue = parseInt(el.getAttribute('x'));
+                    el.setAttribute('x',  oldValue + step);
+                } else if (dir === 'left'){
+                    el = document.getElementById(elementID);
+                    oldValue = parseInt(el.getAttribute('x'));
+                    el.setAttribute('x',  oldValue - step);
+                } else if (dir === 'up'){
+                    el = document.getElementById(elementID);
+                    oldValue = parseInt(el.getAttribute('y'));
+                    el.setAttribute('y',  oldValue - step);
+                } else if (dir === 'down'){
+                    el = document.getElementById(elementID);
+                    oldValue = parseInt(el.getAttribute('y'));
+                    el.setAttribute('y',  oldValue + step);
+                } 
+            } else {
                 el = document.getElementById(elementID);
-                oldValue = parseInt(el.getAttribute('x'));
-                el.setAttribute('x',  oldValue + step);
-            } else if (dir === 'left'){
-                el = document.getElementById(elementID);
-                oldValue = parseInt(el.getAttribute('x'));
-                el.setAttribute('x',  oldValue - step);
-            } else if (dir === 'up'){
-                el = document.getElementById(elementID);
-                oldValue = parseInt(el.getAttribute('y'));
-                el.setAttribute('y',  oldValue - step);
-            } else if (dir === 'down'){
-                el = document.getElementById(elementID);
-                oldValue = parseInt(el.getAttribute('y'));
-                el.setAttribute('y',  oldValue + step);
+                el.setAttribute('x', x);
+                el.setAttribute('y', y);
             }
         },
         
@@ -269,6 +277,8 @@ var controller = (function(ui, snake){
                 changeDir('up');
             } else if (event.keyCode === 40 && ui.getDir() !== 'up'){
                 changeDir('down');
+            } else if (event.key === 'p'){
+                gameStatus = false;
             }
         });
     };
@@ -282,13 +292,14 @@ var controller = (function(ui, snake){
                 Refresh the page
             */        
             // The snake should keep moving to the assigned direction
-            moveRectangle('rect-0', ui.getDir(), step);
-            // spawnFood();
-            if(snake.collisionDetection()){
-                spawnFood();
-                addTail();
+            if(gameStatus){
+                moveRectangle('rect-0', ui.getDir(), step);
+                if(snake.collisionDetection()){
+                    spawnFood();
+                    addTail();
+                }
+                refreshTail();
             }
-            refreshTail();
     };
     
     var moveRectangle = function(elementID, dir, step){
@@ -303,7 +314,8 @@ var controller = (function(ui, snake){
         // 2. Change rect coordinates depending on dir
         rect = snake.getRect(index);
         
-        
+        rect.oldX = rect.x;
+        rect.oldY = rect.y;
         
         if(dir === 'right'){
             rect.x += step;
@@ -341,6 +353,7 @@ var controller = (function(ui, snake){
         
         // 1. Add rectangle to tail.
         [x, y] = snake.addTail(ui.getDir(), size, size, space);
+        console.log(x,y);
         // 2. Add to UI.
         id = snake.getLastRect().id;
         ui.addRectangle(666, 666, size, size, x, y, 'rect-' + id.toString());
@@ -356,10 +369,12 @@ var controller = (function(ui, snake){
             lastRect = snake.getRect(i);
             nextRect = snake.getRect(i - 1);
             
-            lastRect.x = nextRect.x;
-            lastRect.y = nextRect.y;
+            lastRect.oldX = lastRect.x;
+            lastRect.oldY = lastRect.y;
+            lastRect.x = nextRect.oldX;
+            lastRect.y = nextRect.oldY;
             snake.alterRect(i, lastRect);
-            moveRectangle('rect-' + i.toString(), ui.getDir(), step);
+            ui.moveRectangle('rect-' + i.toString(), ui.getDir(), step, lastRect.x, lastRect.y);
         }
     };
     
@@ -375,7 +390,7 @@ var controller = (function(ui, snake){
             // 1. Get screen width & height
             
             // Create rectangle (head) and add it to the DOM
-            snake.createRectangle(50, 50, 200, 440);
+            snake.createRectangle(size, size, 200, 440);
             ui.addRectangle(screenWidth, screenHeight, size, size, 200, 440, 'rect-0');
 
             snake.createFood(size, size, 500, 500);
