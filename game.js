@@ -185,7 +185,6 @@ var snakeController = (function(){
             var headX, headY, headWidth, headHeight,
                 foodX, foodY, foodWidth, foodHeight;
             var condition1, condition2, condition;
-            var v1, v2, v3, v4;
             
             headX = rectArray[0].x;
             headY = rectArray[0].y;
@@ -209,23 +208,33 @@ var snakeController = (function(){
         
         addTail: function(dir, w, h, space) {
             var lastRect,
-                newRect;
+                newRect,
+                newX,
+                newY;
             
             // 1. Find the last rectangle in rectArray.
             lastRect = rectArray[rectArray.length - 1];
             // 2. Add the next one with ${space} pixels between the last
             if(dir === 'right'){
-                newRect = createRectangle(w, h, lastRect.x - space - lastRect.width , lastRect.y);
-                return [lastRect.x - space - lastRect.width, lastRect.y];
+                newX = lastRect.x - space - lastRect.width;
+                newY = lastRect.y;
+                newRect = createRectangle(w, h, newX, newY);
+                return [newX, newY];
             } else if(dir === 'left') {
-                newRect = createRectangle(w, h, lastRect.x + lastRect.width + space, lastRect.y);
-                return [lastRect.x + lastRect.width + space, lastRect.y];
+                newX = lastRect.x + lastRect.width + space;
+                newY = lastRect.y;
+                newRect = createRectangle(w, h, newX, newY);
+                return [newX, newY];
             } else if(dir === 'up'){
-                newRect = createRectangle(w, h, lastRect.x, lastRect.y + lastRect.height + space);
-                return [lastRect.x, lastRect.y + lastRect.height + space];
+                newX = lastRect.x;
+                newY = lastRect.y + lastRect.height + space;
+                newRect = createRectangle(w, h, newX, newY);
+                return [newX, newY];
             } else if(dir === 'down'){
-                newRect = createRectangle(w, h, lastRect.x, lastRect.y - space);
-                return [lastRect.x, lastRect.y - space];
+                newX = lastRect.x;
+                newY = lastRect.y - space - lastRect.height;
+                newRect = createRectangle(w, h, newX, newY);
+                return [newX, newY];
             }
         },
         
