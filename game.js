@@ -434,9 +434,6 @@ var controller = (function(ui, snake){
             // Event listeners should be called AFTER the rectangles have been created
             setupEventListeners();
             setInterval(refresh, 1000 / 18);
-            
-            // Add score
-            ui.addScoreText();
         }  
     };
 }(UIcontroller, snakeController));
