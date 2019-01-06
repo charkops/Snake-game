@@ -10,8 +10,10 @@
 */
 
 // GLOBAL vars
-var screenWidth = window.screen.width - 30;
-var screenHeight = window.screen.height - 30;
+// var screenWidth = window.screen.availWidth * window.devicePixelRatio;
+// var screenHeight = window.screen.availHeight * window.devicePixelRatio;
+var screenWidth = $(window).innerWidth();
+var screenHeight = $(window).innerHeight();
 var gameStatus = true;
 
 
@@ -54,7 +56,7 @@ var UIcontroller = (function(){
             }
             
             if(id === 'rect-0'){
-                html =  '<svg width="%width%" height="%height%" id="svgALL"><rect x="%x%" y="%y%" width="%rWidth%" id="%id%" height="%rHeight%" style="fill:green;stroke:pink;stroke-width:0;opacity:1" /></svg>';
+                html =  '<svg width="%width%" height="%height%" id="svgALL"><rect x="%x%" y="%y%" width="%rWidth%" id="%id%" height="%rHeight%" style="fill:green;stroke:blue;stroke-width:1;opacity:1" /></svg>';
         
                 html = html.replace('%width%', width);
                 html = html.replace('%height%', height);
@@ -69,7 +71,7 @@ var UIcontroller = (function(){
                 html = html.replace('%x%', x);
                 html = html.replace('%y%', y);
             } else {
-                html = '<rect x="%x%" y="%y%" width="%rWidth%" id="%id%" height="%rHeight%" style="fill:green;stroke:pink;stroke-width:0;opacity:1" />';
+                html = '<rect x="%x%" y="%y%" width="%rWidth%" id="%id%" height="%rHeight%" style="fill:green;stroke:blue;stroke-width:1;opacity:1" />';
                 html = html.replace('%rWidth%', rWidth);
                 html = html.replace('%rHeight%', rHeight);
                 html = html.replace('%x%', x);
@@ -127,8 +129,7 @@ var UIcontroller = (function(){
             
             element = document.getElementById(DOMstrings.food);
             element.parentNode.removeChild(element);
-        }
-        
+        },
     };
 }());
 
@@ -146,7 +147,6 @@ var snakeController = (function(){
     };
     
     var food;
-    
     var ID = 0;
     
     // Array containing all Rectangle objects
@@ -157,6 +157,32 @@ var snakeController = (function(){
         ID++;
     };
     
+    var collisionDetection = function(second){
+            // Check if the head of the snake hit food
+            // return true or false
+            var headX, headY, headWidth, headHeight,
+                foodX, foodY, foodWidth, foodHeight;
+            var condition1, condition2, condition;
+            
+            headX = rectArray[0].x;
+            headY = rectArray[0].y;
+            headWidth = rectArray[0].width;
+            headHeight = rectArray[0].height;
+            foodX = second.x;
+            foodY = second.y;
+            foodWidth = second.width;
+            foodHeight = second.height;
+            
+            condition1 = (headX < foodX + foodWidth) && (headX + headWidth > foodX);
+            condition2 = (headY < foodY + foodHeight) && (headY + headHeight > foodY);
+            condition = condition1 && condition2;
+            
+            if (condition){
+                return true;
+            } else {
+                return false;
+            }
+    };
     
     // Public methods
     return {
@@ -187,32 +213,8 @@ var snakeController = (function(){
             }
         },
         
-        collisionDetection: function(){
-            // Check if the head of the snake hit food
-            // return true or false
-            var headX, headY, headWidth, headHeight,
-                foodX, foodY, foodWidth, foodHeight;
-            var condition1, condition2, condition;
-            
-            headX = rectArray[0].x;
-            headY = rectArray[0].y;
-            headWidth = rectArray[0].width;
-            headHeight = rectArray[0].height;
-            foodX = food.x;
-            foodY = food.y;
-            foodWidth = food.width;
-            foodHeight = food.height;
-            
-            condition1 = (headX < foodX + foodWidth) && (headX + headWidth > foodX);
-            condition2 = (headY < foodY + foodHeight) && (headY + headHeight > foodY);
-            condition = condition1 && condition2;
-            
-            if (condition){
-                return true;
-            } else {
-                return false;
-            }
-        },
+        collisionDetection: collisionDetection,
+        
         
         addTail: function(dir, w, h, space) {
             var lastRect,
@@ -244,6 +246,30 @@ var snakeController = (function(){
                 newRect = createRectangle(w, h, newX, newY);
                 return [newX, newY];
             }
+        },
+        
+        getScore: function(){
+            // We don't need to actually implement this function,
+            // since the score increses each time the snake 'eats' food
+            // That also means that the score is equal to the number of 
+            // rectangles present in the snake excluding the head (number of tails)
+            // Which is also equal to the current ID - 1
+            return ID - 1;
+        },
+        
+        checkIfDead: function(){
+            // Check if head is inside any of the body.
+            // return true || false
+            for (var i = 1; i < rectArray.length; i++){
+                if(collisionDetection(rectArray[i])){
+                    return true;
+                }
+            }
+            return false;
+        },
+        
+        getFood: function(){
+            return food;
         },
         
         testing: function(){
@@ -279,6 +305,8 @@ var controller = (function(ui, snake){
                 changeDir('down');
             } else if (event.key === 'p'){
                 gameStatus = false;
+            } else if (event.key === 's'){
+                gameStatus = true;
             }
         });
     };
@@ -294,11 +322,15 @@ var controller = (function(ui, snake){
             // The snake should keep moving to the assigned direction
             if(gameStatus){
                 moveRectangle('rect-0', ui.getDir(), step);
-                if(snake.collisionDetection()){
+                if(snake.collisionDetection(snake.getFood())){
                     spawnFood();
                     addTail();
                 }
                 refreshTail();
+                if(snake.checkIfDead()){
+                    gameStatus = false;
+                    alert(`LOSER, Score: ${snake.getScore()}`);
+                }
             }
     };
     
@@ -306,6 +338,9 @@ var controller = (function(ui, snake){
         var rect,
             index;
         
+        
+        // This function will only ever be called for the 'rect-0' element a.k.a the Head 
+        // of the snake. Not sure why i coded it this way... oh well
         index = elementID.split('-')[1];
         index = parseInt(index);
         
@@ -313,6 +348,22 @@ var controller = (function(ui, snake){
         ui.moveRectangle(elementID, dir, step);
         // 2. Change rect coordinates depending on dir
         rect = snake.getRect(index);
+        
+        
+        // THIS COULD CAUSE SOME BUGS
+        if(rect.x  >= screenWidth - 15){
+            rect.x = 15;
+        }
+        if(rect.x <= 15){
+            rect.x = screenWidth - 15;
+        }
+        if(rect.y >= screenHeight - 15){
+            rect.y = 15;
+        }
+        if(rect.y <= 15){
+            rect.y = screenHeight - 15;
+        }
+        
         
         rect.oldX = rect.x;
         rect.oldY = rect.y;
@@ -337,7 +388,12 @@ var controller = (function(ui, snake){
             // Calculate new coordinates
             x = Math.round(Math.random() * screenWidth);
             y = Math.round(Math.random() * screenHeight);
-           
+            x <= 50 ? x += 50: x = x;
+            x >= screenWidth - 50? x -= 50: x = x;
+            y <= 50 ? y += 50: y = y;
+            y >= screenHeight - 50? y -= 50: y = y;
+        
+        
             // Change the coordinates in the snakeController Module
             snake.createFood(size, size, x, y, 'food');
             
@@ -353,7 +409,6 @@ var controller = (function(ui, snake){
         
         // 1. Add rectangle to tail.
         [x, y] = snake.addTail(ui.getDir(), size, size, space);
-        console.log(x,y);
         // 2. Add to UI.
         id = snake.getLastRect().id;
         ui.addRectangle(666, 666, size, size, x, y, 'rect-' + id.toString());
